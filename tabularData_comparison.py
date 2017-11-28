@@ -6,9 +6,7 @@
 #    Author :   Jianhui Qi        j.qi@uq.edu.au                      #
 #    Advisor:   Ingo H. J. Jahn   i.jahn@uq.edu.au                    #
 #    Date   :   01-06-2017                                            #
-#    version:   2.                                                    #
-#     update:   could plot multiple combination of T and p            #
-#               And return the best combination of them               #
+#    version:   1.                                                    #
 #######################################################################
 
 from mpl_toolkits.mplot3d import Axes3D
@@ -19,24 +17,19 @@ from pyRefpropMania import *
 
 ########################################
 # Define the limitation for plotting:
-Tmin        =   500.0                    #[K] The lower limit of the calculation temperature
-Tmax        =   1500.0                   #[K] The upper limit of the calculation temperature
+Tmin        =   600.0                    #[K] The lower limit of the calculation temperature
+Tmax        =   1000.0                   #[K] The upper limit of the calculation temperature
             
-pmin        =   5.0e6                    #[kPa] The lower limit of the pressure need to be compared
-pmax        =   32.0e6                   #[kPa] The upper limit of the pressure need to be compared
+pmin        =   8.0e6                    #[kPa] The lower limit of the pressure need to be compared
+pmax        =   22.0e6                   #[kPa] The upper limit of the pressure need to be compared
 
 
-nTh         =   150.                      # How many data points for temperature in high resolution grid
+nTh         =   100.                      # How many data points for temperature in high resolution grid
 nPh         =   100.                      # How many data points for pressure in high resolution grid
 
+nTcmax      =   7.                       # How many data points for temperature  in coarse resolution grid
+nPcmax      =   8.                      # How many data points for pressure in coarse resolution grid
 
-nTcmin      =   25.
-nTcmax      =   30.
-
-nPcmin      =   4.                       # How many data points for temperature  in coarse resolution grid
-nPcmax      =   10.                      # How many data points for pressure in coarse resolution grid
-
-percent_tol =   0.5                        # [%]
 tol         =   1.e-7                    # Usding the tolerance to adjust the convergence. Usually 1.e-7 is fine.
 ########################################
 
@@ -215,186 +208,101 @@ def interpolation_2D(nTc,nPc):
     #print "End the interpolation progress"
     return Zh,Zc,Zi
 
-    #print Zc
-    #print Th, Tc,"\n-------\n",Ph,Pc
-    #print Zh,Zc
-    #print "-------\n",Zi[0],"\n-----------------------\n",Zh[0]
+	#print Zc
+	#print Th, Tc,"\n-------\n",Ph,Pc
+	#print Zh,Zc
+	#print "-------\n",Zi[0],"\n-----------------------\n",Zh[0]
 
-    ######################################################################################
-    # checking if the code is working via plot the difference between the first line data:
-    # During calculation, you can bulk comment them all.
-    '''
-    temp = []
-    for m in range(len(Zi[0])):
-        temp.append(Zi[0][m] - Zh[0][m])
-    print temp
+	######################################################################################
+	# checking if the code is working via plot the difference between the first line data:
+	# During calculation, you can bulk comment them all.
+	'''
+	temp = []
+	for m in range(len(Zi[0])):
+	    temp.append(Zi[0][m] - Zh[0][m])
+	print temp
 
-    #And then plot the error:
-    fig = plt.figure()
-    ax  = fig.add_subplot(111)
-    x   = np.arange(0,len(temp),1)
-    ax.plot(x, temp)
-    plt.show()
-    '''
-    ######################################################################################
+	#And then plot the error:
+	fig = plt.figure()
+	ax  = fig.add_subplot(111)
+	x   = np.arange(0,len(temp),1)
+	ax.plot(x, temp)
+	plt.show()
+	'''
+	######################################################################################
 
-    # calculation the percent of error for the interpolation methods
+	# calculation the percent of error for the interpolation methods
 
 
 def err_calculation(Zi,Zh):
 
-    err = []
-    for m in range(len(Zi)):
-        err_temp = []
-        for n in range(len(Zi[m])):
-            err_temp.append( abs((Zi[m][n] - Zh[m][n])/Zh[m][n])*100. )
-        err.append(err_temp)
+	err = []
+	for m in range(len(Zi)):
+	    err_temp = []
+	    for n in range(len(Zi[m])):
+	        err_temp.append( abs((Zi[m][n] - Zh[m][n])/Zh[m][n])*100. )
+	    err.append(err_temp)
 
-    maxmium_error = np.amax(err)
-    print "maximum error:", maxmium_error," %"
-    return maxmium_error,err
-
-
-def plot_err_comparison(X,Y,err_list):
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection = '3d')
-    # Plot the surface.
-    #surf = ax.plot_surface(Pc,Tc, Zc, #cmap=cm.coolwarm,
-    #                       linewidth=0, antialiased=False)
-    #ax.scatter(Ph,Th,Zh,c ='b',alpha = 0.5)
-    #ax.scatter(Pc,Tc,Zc,c='r',marker = '^',alpha = 1.0)
-    ax.plot_surface(X,Y, err_list,linewidth=0, antialiased=False)
-    ax.scatter(X,Y,err_list,c='r')
-    
-    
-
-    ax.set_title('Maximum error surface for all selected combination of T and p')
-    ax.set_xlabel('Number of Temperature arguments')
-    ax.set_ylabel('Numebr of Pressure arguments')
-    ax.set_zlabel('Error/[%]')
-    return ax
+	maxmium_error = np.amax(err)
+	print maxmium_error
+	return maxmium_error
 
 
+def plot_err_surface(X,Y,err_list):
 
-# This code will return the recommendade combination of p and T.
-def recommendation(err_list):
-    
-    I, J = 0,0
-    combo = []
-    exist_flage = 0
-    for i in range(len(err_list)):
-        for j in range(len(err_list[i])):
-            if err_list[i][j] <= percent_tol:
-                combo.append([i,j])
-                exist_flage = 1
-    if exist_flage == 0: 
-        print "WARNING!  Currently there's no combination whose\
-               maximum error is lower than", percent_tol
-        return 1,1
-    else:
-        I,J = combo[0][0],combo[0][1]
-        for a in range(len(combo)):
-            if a == 0:
-                pass
-            elif combo[a][0]*combo[a][1] <= combo[a-1][0]*combo[a-1][1]:
-                I,J=combo[a][0],combo[a][1]
-        print I,J 
-        return I,J
+	fig = plt.figure()
+	ax = fig.add_subplot(111, projection = '3d')
+	# Plot the surface.
+	#surf = ax.plot_surface(Pc,Tc, Zc, #cmap=cm.coolwarm,
+	#                       linewidth=0, antialiased=False)
+	#ax.scatter(Ph,Th,Zh,c ='b',alpha = 0.5)
+	#ax.scatter(Pc,Tc,Zc,c='r',marker = '^',alpha = 1.0)
+	ax.plot_surface(X,Y, err_list,linewidth=0, antialiased=False)
+	ax.scatter(X,Y,err_list,c='r')
+	
+	
 
 
-def plot_err_surface(In,Jn,All_err):
-
-    #X = np.arange(Tmin, Tmax + (Tmax - Tmin)/(In) , (Tmax - Tmin)/(In-1.))
-    #Y = np.arange(pmin, pmax + (pmax - pmin)/(Jn) , (pmax - pmin)/(Jn-1.))
-    #Pc, Tc = np.meshgrid(Y,X)
-
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection = '3d')
-    # Plot the surface.
-    #surf = ax.plot_surface(Pc,Tc, Zc, #cmap=cm.coolwarm,
-    #                       linewidth=0, antialiased=False)
-    #ax.scatter(Ph,Th,Zh,c ='b',alpha = 0.5)
-    #ax.scatter(Pc,Tc,Zc,c='r',marker = '^',alpha = 1.0)
-    #print Tc,"\n",Pc,"\n", All_err
-
-    ax.plot_surface(Th,Ph,All_err,cmap=cm.coolwarm,linewidth=0, antialiased=False)
-    #ax.scatter(X,Y,err_list,c='r')
-    ax.set_title('Error value of selected combination of T and p')
-    ax.set_xlabel('Temperature/[$^\circ C$]')
-    ax.set_ylabel('Pressure/[Pa]')
-    ax.set_zlabel('Error in'+specie+' /[%]')
-    return ax 
-
-
+	ax.set_xlabel('Number of Temperature arguments')
+	ax.set_ylabel('Numebr of Pressure arguments')
+	ax.set_zlabel('Error/[%]')
+	plt.show()
 
 
 
 def main():
 
-    Tc_list  = np.arange(nTcmin,nTcmax+1,1)
-    Pc_list  = np.arange(nPcmin,nPcmax+1,1)
+    Tc_list  = np.arange(2,nTcmax+1,1)
+    Pc_list  = np.arange(2,nPcmax+1,1)
     PCL,TCL  = np.meshgrid(Pc_list,Tc_list)
     #print PCL,"\n",TCL
     Zh_list  = []
     Zi_list  = []
-    All_err_list = []
-    max_err_list  = []
+    err_list = []
     print "############################################################"
     print "    This code will help you to determin the resolution "
     print "    you need to perform the real gas properties with"
     print "    an maximum error below 1%"
     print "    The reference resolution is:\n"
     print "    Temperature number: ",nTh," and Pressure number:",nPh,"\n"
-    print "    Then the figure will show the best combination of the"
-    print "    number of temperature and pressures. Which means, under"
-    print "    this resolution, the simulation will run pretty fast with"
-    print "    reseanable accuracy." 
+    print "    Then the figure will show " 
     print "############################################################\n"
 
 
     for i in range(len(Tc_list)):
-        maxerr_temp=[]
-        err_temp =[]
-        for j in range(len(Pc_list)):
-            print "\n---------------------------"
-           
-            print "Stating the interpolation for nTc=",Tc_list[i]," and nPc=",Pc_list[j],"..."
-            Zh,Zc,Zi = interpolation_2D(Tc_list[i],Pc_list[j])
+    	err_temp =[]
+    	for j in range(len(Pc_list)):
+    		print "\n---------------------------\n"
+    		print "Stating the interpolation for nTc=",Tc_list[i]," and nPc=",Pc_list[j],"..."
+    		Zh,Zc,Zi = interpolation_2D(Tc_list[i],Pc_list[j])
 
-            max_err,err = err_calculation(Zi,Zh)
-#            Zh_list.append(Zh)
-#            Zi_list.append(Zi)
-            maxerr_temp.append(max_err)
-            err_temp.append(err)
+    		max_err = err_calculation(Zi,Zh)
+#    		Zh_list.append(Zh)
+#    		Zi_list.append(Zi)
+    		err_temp.append(max_err)
     #print TCL,PCL,err_list
-        max_err_list.append(maxerr_temp)
-        All_err_list.append(err_temp)
-    # get the recommendation combination from the list.
-    I,J = recommendation(max_err_list)
-    # The index should count from the starting index of T and p:
-    In = I + nTcmin
-    Jn = J + nPcmin
-
-    print np.size(All_err_list[I][J]),np.shape(All_err_list[I][J]),np.shape(All_err_list)
-    
-
-
-    surface = plot_err_surface(In,Jn,All_err_list[I][J])    
-    compare = plot_err_comparison(TCL,PCL,max_err_list)
-    print surface,compare
-
-    #fig = plt.figure()
-    #ax0 = fig.add_subplot(211,projection = '3d')
-    #fig,(ax0,ax1)  = plt.subplots(1,2,projection = '3d')
-    #ax0 = surface
-    #ax1 = compare
-    #ax0.get_figure()
-    #ax1.get_figure()
-    
-    plt.show()
-
+        err_list.append(err_temp)
+    plot_err_surface(TCL,PCL,err_list)
     return 0
 
 ###
@@ -406,8 +314,7 @@ if __name__ == "__main__":
         #printUsage()
         #sys.exit(1)
     
-    main()
-    '''
+
     # execute the code
     try:
         main()
@@ -415,6 +322,11 @@ if __name__ == "__main__":
         print "SUCESS."
         print "\n \n"
     except:
-        print "This run has gone bad."
-        sys.exit(1)
-    '''        
+    	print "This run has gone bad."
+    	sys.exit(1)
+    	
+
+    #except MyError as e:
+    #    print "This run has gone bad."
+    #    print e.value
+    #    sys.exit(1)
